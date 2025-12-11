@@ -22,29 +22,52 @@ This Bicep template deploys a complete Ubuntu virtual machine infrastructure in 
 
 ## Quick Start
 
-### 1. Generate SSH Key (if you don't have one)
+### Automated Deployment (Recommended)
+
+Use the included deployment script for a streamlined deployment:
+
+```bash
+# Make the script executable (if not already)
+chmod +x deploy.sh
+
+# Deploy with default settings
+./deploy.sh
+
+# Or specify custom resource group and SSH key
+./deploy.sh my-resource-group ~/.ssh/my_key.pub
+```
+
+The script will:
+- Check prerequisites (Azure CLI, Bicep, SSH key)
+- Create the resource group
+- Deploy the VM infrastructure
+- Display connection information
+
+### Manual Deployment
+
+#### 1. Generate SSH Key (if you don't have one)
 
 ```bash
 ssh-keygen -t rsa -b 4096 -f ~/.ssh/azure_vm_key
 ```
 
-### 2. Login to Azure
+#### 2. Login to Azure
 
 ```bash
 az login
 ```
 
-### 3. Create a Resource Group
+#### 3. Create a Resource Group
 
 ```bash
 az group create --name rg-ubuntu-vm --location eastus
 ```
 
-### 4. Deploy the Template
+#### 4. Deploy the Template
 
 You can deploy using either the Azure CLI or parameters file:
 
-#### Option A: Using Azure CLI with inline parameters
+##### Option A: Using Azure CLI with inline parameters
 
 ```bash
 az deployment group create \
@@ -53,7 +76,7 @@ az deployment group create \
   --parameters adminSshKey="$(cat ~/.ssh/azure_vm_key.pub)"
 ```
 
-#### Option B: Using parameters file
+##### Option B: Using parameters file
 
 First, set the SSH public key as an environment variable:
 
@@ -70,7 +93,7 @@ az deployment group create \
   --parameters main.bicepparam
 ```
 
-#### Option C: Override specific parameters
+##### Option C: Override specific parameters
 
 ```bash
 az deployment group create \
@@ -81,7 +104,7 @@ az deployment group create \
   --parameters location=westus2
 ```
 
-### 5. Get Connection Information
+#### 5. Get Connection Information
 
 After deployment completes, retrieve the output values:
 
@@ -197,7 +220,9 @@ az deployment group validate \
 
 - `main.bicep`: Main Bicep template defining the infrastructure
 - `main.bicepparam`: Parameters file with default values
+- `deploy.sh`: Automated deployment script (recommended for quick start)
 - `README.md`: This documentation file
+- `.gitignore`: Git ignore file excluding build artifacts
 
 ## Troubleshooting
 
