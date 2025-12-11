@@ -155,9 +155,17 @@ The template provides the following outputs:
 
 ## Security Considerations
 
-- The template uses SSH key authentication (password authentication is disabled)
-- The NSG allows SSH access from any source IP. For production, restrict the source IP range
+⚠️ **Important Security Notes:**
+
+- The template uses SSH key authentication (password authentication is disabled) ✅
+- **WARNING**: The default NSG configuration allows SSH access from ANY source IP (`*`). This is suitable for development/testing but creates a security risk in production environments.
+- **For production use**: Edit `main.bicep` line 71 to restrict SSH access to your specific IP address or range:
+  ```bicep
+  sourceAddressPrefix: 'YOUR.IP.ADDRESS.HERE/32'  // Replace with your IP
+  ```
 - The VM uses a static public IP for consistent access
+- Consider using Azure Bastion for more secure SSH access without exposing port 22 to the internet
+- Regularly update your Ubuntu VM with security patches after deployment
 
 ## Customization Examples
 

@@ -49,11 +49,21 @@ var nicName = '${vmName}-nic'
 var publicIpName = '${vmName}-pip'
 var osDiskName = '${vmName}-osdisk'
 
+// Ubuntu OS image offer mapping based on version
+var ubuntuOfferMap = {
+  '22.04-LTS': '0001-com-ubuntu-server-jammy'
+  '20.04-LTS': '0001-com-ubuntu-server-focal'
+  '18.04-LTS': '0001-com-ubuntu-server-bionic'
+}
+var ubuntuOffer = ubuntuOfferMap[ubuntuOSVersion]
+
 // ============================================================================
 // Resources
 // ============================================================================
 
 // Network Security Group
+// NOTE: For production use, restrict SSH access to specific IP addresses
+// by replacing '*' in sourceAddressPrefix with your IP address or range
 resource nsg 'Microsoft.Network/networkSecurityGroups@2023-05-01' = {
   name: nsgName
   location: location
@@ -66,7 +76,7 @@ resource nsg 'Microsoft.Network/networkSecurityGroups@2023-05-01' = {
           protocol: 'Tcp'
           access: 'Allow'
           direction: 'Inbound'
-          sourceAddressPrefix: '*'
+          sourceAddressPrefix: '*'  // WARNING: Allows SSH from anywhere. Restrict this in production!
           sourcePortRange: '*'
           destinationAddressPrefix: '*'
           destinationPortRange: '22'
@@ -163,7 +173,7 @@ resource vm 'Microsoft.Compute/virtualMachines@2023-03-01' = {
     storageProfile: {
       imageReference: {
         publisher: 'Canonical'
-        offer: '0001-com-ubuntu-server-jammy'
+        offer: ubuntuOffer
         sku: ubuntuOSVersion
         version: 'latest'
       }

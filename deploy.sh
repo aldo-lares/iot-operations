@@ -111,8 +111,20 @@ if [ $? -eq 0 ]; then
     echo "  $SSH_COMMAND"
     echo ""
     echo -e "${GREEN}To connect to your VM, run:${NC}"
-    PRIVATE_KEY_PATH="${SSH_KEY_PATH%.pub}"
-    echo "  $SSH_COMMAND -i $PRIVATE_KEY_PATH"
+    # Attempt to determine private key path
+    if [[ "$SSH_KEY_PATH" == *.pub ]]; then
+        PRIVATE_KEY_PATH="${SSH_KEY_PATH%.pub}"
+    else
+        PRIVATE_KEY_PATH="$SSH_KEY_PATH"
+    fi
+    
+    if [ -f "$PRIVATE_KEY_PATH" ]; then
+        echo "  $SSH_COMMAND -i $PRIVATE_KEY_PATH"
+    else
+        echo "  $SSH_COMMAND -i <path-to-your-private-key>"
+        echo ""
+        echo -e "${YELLOW}Note: Replace <path-to-your-private-key> with your actual private key path${NC}"
+    fi
     echo ""
 else
     echo -e "${RED}========================================${NC}"
