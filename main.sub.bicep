@@ -11,12 +11,15 @@ param resourceGroupName string = 'rg-iot-operations'
 @description('Location for the resource group and all resources')
 param location string = 'eastus'
 
+@description('Optional suffix seed to force a new RG name per deployment; defaults to a new GUID')
+param deploymentSuffix string = newGuid()
+
 // ============================================================================
 // Variables
 // ============================================================================
 
-// Generate unique suffix (5 chars) based on subscription ID
-var uniqueSuffix = substring(uniqueString(subscription().subscriptionId), 0, 5)
+// Generate unique suffix (5 chars) per deployment using subscription ID and provided seed
+var uniqueSuffix = substring(uniqueString('${subscription().subscriptionId}-${deploymentSuffix}'), 0, 5)
 var resourceGroupNameWithSuffix = '${resourceGroupName}-${uniqueSuffix}'
 
 @description('Name of the virtual machine')
