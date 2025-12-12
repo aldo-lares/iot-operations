@@ -1,8 +1,27 @@
 # Bicep build artifacts
 *.json
+!main.bicep
+!main.sub.bicep
+
+# Sensitive parameter files
+*.parameters.json
+*.params.json
+secrets.bicepparam
+
+# SSH keys
+*.pub
+*.pem
+id_rsa*
+azure_vm_key*
 
 # Azure deployment artifacts
-*.parameters.json
+*.log
+*.zip
+
+# Environment files with secrets
+.env
+.env.local
+*.env
 
 # IDE and editor files
 .vscode/
@@ -14,6 +33,10 @@
 # OS files
 .DS_Store
 Thumbs.db
+
+# Backup files
+*.bak
+*.backup
 
 # Terraform files (if used)
 .terraform/

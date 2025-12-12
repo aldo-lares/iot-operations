@@ -1,10 +1,11 @@
-using './main.bicep'
+using './main.sub.bicep'
 
 // ============================================================================
-// Parameters for Ubuntu VM deployment
+// Parameters for subscription-level deployment
 // ============================================================================
 
-// Location where resources will be deployed
+// Resource Group settings
+param resourceGroupName = 'rg-iot-operations'
 param location = 'westus2'
 
 // Virtual Machine settings
@@ -13,8 +14,8 @@ param vmSize = 'Standard_B2s'
 
 // Admin credentials
 param adminUsername = 'azureuser'
-// Note: You must provide the SSH public key during deployment
-// Example: bicep deploy ... --parameters adminSshKey='ssh-rsa AAAAB3...'
+// IMPORTANT: SSH key must be provided via environment variable or Key Vault
+// Set environment variable: $env:SSH_PUBLIC_KEY = "ssh-rsa AAAAB3..."
 param adminSshKey = readEnvironmentVariable('SSH_PUBLIC_KEY', '')
 
 // Ubuntu version

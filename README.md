@@ -1,11 +1,12 @@
 # IoT Operations - Ubuntu VM Deployment
 
-This repository contains a basic Bicep project to deploy an Ubuntu virtual machine in Azure.
+This repository contains a Bicep infrastructure-as-code project to deploy an Ubuntu virtual machine in Azure with **automatic resource group creation** and **secure parameter handling**.
 
 ## Overview
 
-This Bicep template deploys a complete Ubuntu virtual machine infrastructure in Azure, including:
+This deployment creates a complete Ubuntu virtual machine infrastructure in Azure:
 
+- **Resource Group**: Automatically created during deployment
 - **Virtual Machine**: Ubuntu Server (22.04 LTS by default)
 - **Virtual Network**: With configurable address space
 - **Subnet**: Default subnet with network security group association
@@ -16,88 +17,108 @@ This Bicep template deploys a complete Ubuntu virtual machine infrastructure in 
 ## Prerequisites
 
 - Azure CLI installed ([Installation guide](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli))
-- Bicep CLI installed ([Installation guide](https://learn.microsoft.com/en-us/azure/azure-resource-manager/bicep/install))
+- Bicep CLI (auto-installed by deployment scripts)
 - An Azure subscription
 - SSH key pair for authentication
+
+## Key Features
+
+✅ **Subscription-level deployment** - Creates resource group automatically  
+✅ **Secure parameter handling** - SSH keys via environment variables or Key Vault  
+✅ **Cross-platform scripts** - PowerShell and Bash deployment scripts  
+✅ **Production-ready** - Modular design with security best practices
 
 ## Quick Start
 
 ### Automated Deployment (Recommended)
 
-Use the included deployment script for a streamlined deployment:
+#### PowerShell (Windows)
+```powershell
+# Deploy with defaults (creates rg-iot-operations)
+.\deploy.ps1
 
-```bash
-# Make the script executable (if not already)
-chmod +x deploy.sh
-
-# Deploy with default settings
-./deploy.sh
-
-# Or specify custom resource group and SSH key
-./deploy.sh my-resource-group ~/.ssh/my_key.pub
+# Or customize parameters
+.\deploy.ps1 -ResourceGroupName "rg-my-iot" -SshKeyPath "$HOME\.ssh\my_key.pub" -Location "westus2"
 ```
 
-The script will:
-- Check prerequisites (Azure CLI, Bicep, SSH key)
-- Create the resource group
-- Deploy the VM infrastructure
-- Display connection information
+#### Bash (Linux/macOS/WSL)
+```bash
+# Make the script executable
+chmod +x deploy.sh
+
+# Deploy with defaults
+./deploy.sh
+
+# Or specify custom parameters
+./deploy.sh rg-my-iot ~/.ssh/my_key.pub
+```
+
+The scripts will:
+- ✅ Check prerequisites (Azure CLI, Bicep, SSH key)
+- ✅ **Automatically create the resource group**
+- ✅ Deploy the VM infrastructure
+- ✅ Display connection information
+
+> **Note**: The new subscription-level deployment automatically creates the resource group - no manual creation needed!
 
 ### Manual Deployment
 
 #### 1. Generate SSH Key (if you don't have one)
 
-```bash
+```powershell
+# PowerShell
+ssh-keygen -t rsa -b 4096 -f $HOME\.ssh\azure_vm_key
+
+# Bash/Linux
 ssh-keygen -t rsa -b 4096 -f ~/.ssh/azure_vm_key
 ```
 
 #### 2. Login to Azure
 
-```bash
+```powershell
 az login
 ```
 
-#### 3. Create a Resource Group
+#### 3. Set SSH Key Environment Variable
 
-```bash
-az group create --name rg-ubuntu-vm --location eastus
+```powershell
+# PowerShell
+$sshKey = Get-Content "$HOME\.ssh\azure_vm_key.pub" -Raw
+$env:SSH_PUBLIC_KEY = $sshKey.Trim()
+
+# Bash/Linux
+export SSH_PUBLIC_KEY=$(cat ~/.ssh/azure_vm_key.pub)
 ```
 
-#### 4. Deploy the Template
+#### 4. Deploy (Subscription-Level - Creates Resource Group Automatically)
 
-You can deploy using either the Azure CLI or parameters file:
+```powershell
+# PowerShell
+az deployment sub create `
+  --name "iot-ops-deployment" `
+  --location "eastus" `
+  --template-file main.sub.bicep `
+  --parameters main.sub.bicepparam
 
-##### Option A: Using Azure CLI with inline parameters
+# Bash/Linux
+az deployment sub create \
+  --name "iot-ops-deployment" \
+  --location "eastus" \
+  --template-file main.sub.bicep \
+  --parameters main.sub.bicepparam
+```
 
-```bash
+#### Alternative: Legacy Resource Group Deployment
+
+If you prefer the old method (manual resource group creation):
+
+```powershell
+# Create resource group first
+az group create --name rg-iot-operations --location eastus
+
+# Deploy to existing resource group
 az deployment group create \
-  --resource-group rg-ubuntu-vm \
-  --template-file main.bicep \
-  --parameters adminSshKey="$(cat ~/.ssh/azure_vm_key.pub)"
-```
-
-##### Option B: Using parameters file
-
-First, set the SSH public key as an environment variable:
-
-```bash
-export SSH_PUBLIC_KEY="$(cat ~/.ssh/azure_vm_key.pub)"
-```
-
-Then deploy:
-
-```bash
-az deployment group create \
-  --resource-group rg-ubuntu-vm \
-  --template-file main.bicep \
-  --parameters main.bicepparam
-```
-
-##### Option C: Override specific parameters
-
-```bash
-az deployment group create \
-  --resource-group rg-ubuntu-vm \
+  --resource-group rg-iot-operations \
   --template-file main.bicep \
   --parameters main.bicepparam \
   --parameters vmName=my-ubuntu-vm \
@@ -226,11 +247,53 @@ az deployment group validate \
 
 ## Files in this Repository
 
-- `main.bicep`: Main Bicep template defining the infrastructure
-- `main.bicepparam`: Parameters file with default values
-- `deploy.sh`: Automated deployment script (recommended for quick start)
-- `README.md`: This documentation file
-- `.gitignore`: Git ignore file excluding build artifacts
+- **`main.sub.bicep`**: Subscription-level template (creates resource group + infrastructure)
+- **`main.sub.bicepparam`**: Parameters for subscription-level deployment
+- **`main.bicep`**: Resource group-level template (VM infrastructure only)
+- **`main.bicepparam`**: Parameters for resource group deployment
+- **`deploy.ps1`**: PowerShell deployment script (Windows) ⭐
+- **`deploy.sh`**: Bash deployment script (Linux/macOS/WSL)
+- **`DEPLOYMENT.md`**: Detailed deployment guide with security best practices
+- **`README.md`**: This documentation file
+- **`.gitignore`**: Protects sensitive files from being committed
+
+## Deployment Architecture
+
+### Subscription-Level Deployment (Recommended)
+```
+main.sub.bicep (subscription scope)
+    ├── Creates Resource Group
+    └── Calls main.bicep as module
+            └── Creates VM Infrastructure
+```
+
+### Resource Group Deployment (Legacy)
+```
+main.bicep (resource group scope)
+    └── Creates VM Infrastructure
+    (Requires pre-existing resource group)
+```
+
+## Secure Parameter Management
+
+See **[DEPLOYMENT.md](DEPLOYMENT.md)** for detailed security guidance.
+
+### Quick Reference:
+
+**Environment Variables (Default)**
+```powershell
+$env:SSH_PUBLIC_KEY = Get-Content "$HOME\.ssh\id_rsa.pub" -Raw
+```
+
+**Azure Key Vault (Production)**
+```powershell
+az keyvault secret set --vault-name "kv-iot-ops" --name "vm-ssh-key" --value "ssh-rsa AAAAB3..."
+```
+
+**Protected Files** (in .gitignore)
+- `secrets.bicepparam` - Local parameter file with secrets
+- `*.pub` - SSH public keys
+- `*.pem` - SSH private keys
 
 ## Troubleshooting
 

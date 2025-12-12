@@ -20,11 +20,12 @@ param adminSshKey string
 
 @description('Ubuntu OS version')
 @allowed([
+  '24.04-LTS'
   '22.04-LTS'
   '20.04-LTS'
   '18.04-LTS'
 ])
-param ubuntuOSVersion string = '22.04-LTS'
+param ubuntuOSVersion string = '24.04-LTS'
 
 @description('Name of the virtual network')
 param vnetName string = 'ubuntu-vnet'
@@ -51,11 +52,21 @@ var osDiskName = '${vmName}-osdisk'
 
 // Ubuntu OS image offer mapping based on version
 var ubuntuOfferMap = {
+  '24.04-LTS': '0001-com-ubuntu-server-noble'
   '22.04-LTS': '0001-com-ubuntu-server-jammy'
   '20.04-LTS': '0001-com-ubuntu-server-focal'
   '18.04-LTS': '0001-com-ubuntu-server-bionic'
 }
 var ubuntuOffer = ubuntuOfferMap[ubuntuOSVersion]
+
+// Ubuntu OS image SKU mapping based on version (Azure expects underscores)
+var ubuntuSkuMap = {
+  '24.04-LTS': '24_04-lts'
+  '22.04-LTS': '22_04-lts'
+  '20.04-LTS': '20_04-lts'
+  '18.04-LTS': '18_04-lts'
+}
+var ubuntuSku = ubuntuSkuMap[ubuntuOSVersion]
 
 // ============================================================================
 // Resources
@@ -174,7 +185,7 @@ resource vm 'Microsoft.Compute/virtualMachines@2023-03-01' = {
       imageReference: {
         publisher: 'Canonical'
         offer: ubuntuOffer
-        sku: ubuntuOSVersion
+        sku: ubuntuSku
         version: 'latest'
       }
       osDisk: {
