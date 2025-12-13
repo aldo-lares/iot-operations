@@ -11,6 +11,10 @@ param projectName string
 @description('Azure region for resource group (e.g., eastus, westus, northeurope)')
 param location string
 
+@secure()
+@description('SSH public key for VM admin user')
+param adminSshPublicKey string
+
 
 // ============================================================================
 // Variables
@@ -32,6 +36,18 @@ resource resourceGroup 'Microsoft.Resources/resourceGroups@2023-07-01' = {
   location: location
   tags: {
     deployedBy: 'Bicep'
+  }
+}
+
+// Deploy VM inside the created resource group
+module vmModule 'modules/vm/main.bicep' = {
+  scope: resourceGroup
+  name: 'vm-${projectName}-${location}-${uniqueSuffix}'
+  params: {
+    projectName: projectName
+    location: location
+    uniqueSuffix: uniqueSuffix
+    adminSshPublicKey: adminSshPublicKey
   }
 }
 

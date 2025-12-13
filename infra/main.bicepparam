@@ -9,3 +9,4 @@ using './main.bicep'
 // Minimal parameters
 param projectName = 'iotops'
 param location = 'eastus'
+param adminSshPublicKey = 'ssh-rsa AAAA...'

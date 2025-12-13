@@ -7,9 +7,12 @@ Este directorio contiene las plantillas de Bicep para desplegar la infraestructu
 ```
 infra/
 ├── main.bicep           # Plantilla principal de Bicep
-├── main.bicepparam      # Archivo de parámetros (valores por defecto)
+├── main.bicepparam      # Archivo de parámetros mínimos
 ├── bicepconfig.json     # Configuración de análisis y validación
 └── README.md           # Esta documentación
+
+scripts/
+└── deploy.ps1           # Script interactivo de despliegue
 ```
 
 ## Requisitos Previos
@@ -19,34 +22,23 @@ infra/
 - Acceso a una suscripción de Azure
 - PowerShell o Bash
 
-## Parámetros de Entrada
+## Parámetros de Entrada (mínimos)
 
-### Parámetro: `projectName`
-- **Descripción**: Nombre del proyecto (minúsculas, sin espacios)
-- **Tipo**: string
-- **Ejemplo**: `iotops`
-- **Uso en nombres**: `rg-iotops-eastus-a1b2c3d4`
+### `projectName`
+- Descripción: Nombre del proyecto (minúsculas, sin espacios)
+- Tipo: string
+- Ejemplo: `iotops`
+- Uso en nombres: `rg-iotops-eastus-a1b2c3d4`
 
-### Parámetro: `location`
-- **Descripción**: Región de Azure para el resource group
-- **Tipo**: string
-- **Ejemplos válidos**: `eastus`, `westus`, `northeurope`, `westeurope`, `southeastasia`
+### `location`
+- Descripción: Región de Azure para el resource group y la VM
+- Tipo: string
+- Ejemplos válidos: `eastus`, `westus`, `northeurope`, `westeurope`, `southeastasia`
 
-### Parámetro: `environment`
-- **Descripción**: Identificador del ambiente
-- **Tipo**: string
-- **Valores permitidos**: `dev`, `staging`, `prod`
-- **Defecto**: `dev`
-
-### Parámetro: `tags`
-- **Descripción**: Etiquetas de recurso (pares clave-valor)
-- **Tipo**: object
-- **Defecto**: Incluye project, owner, costCenter
-
-### Parámetro: `deploymentDate`
-- **Descripción**: Marca de tiempo del despliegue en UTC (ISO 8601)
-- **Tipo**: string
-- **Defecto**: `utcNow('u')` (establecido automáticamente en la plantilla)
+### `vmModule_adminSshPublicKey`
+- Descripción: Clave pública SSH para el usuario admin de la VM (solo la .pub)
+- Tipo: secure string
+- Ejemplo: `ssh-ed25519 AAAA... user@host`
 
 ## Convención de Nombres
 
@@ -65,7 +57,7 @@ rg-{projectName}-{location}-{uniqueSuffix}
 
 ## Despliegue
 
-### Opción 1: Usando el archivo de parámetros (Recomendado)
+### Opción 1: Usando el archivo de parámetros (simple)
 
 ```powershell
 # Validar la plantilla
@@ -88,8 +80,21 @@ az deployment sub create `
 az deployment sub create `
   --location eastus `
   --template-file infra/main.bicep `
-  --parameters projectName=iotops location=westus environment=prod
+  --parameters projectName=iotops location=westus vmModule_adminSshPublicKey="ssh-ed25519 AAAA..."
 ```
+
+### Opción 3: Despliegue interactivo (recomendado para uso manual)
+
+```powershell
+cd scripts
+./deploy.ps1
+```
+
+El script pedirá:
+- projectName
+- location (resource group / VM)
+- deployment location (control plane, por defecto la misma)
+- ruta a la SSH public key (.pub)
 
 ### Opción 3: Bash/Shell
 
@@ -136,7 +141,7 @@ Modifica `main.bicepparam`:
 ```bicepparam
 param projectName = 'tu-proyecto'
 param location = 'tu-region'
-param environment = 'prod'
+param vmModule_adminSshPublicKey = 'ssh-ed25519 AAAA...'
 ```
 
 ### Agregar recursos adicionales
@@ -152,7 +157,7 @@ param environment = 'prod'
 ✅ Parámetros con descripciones y tipos explícitos  
 ✅ Suffix único usando `uniqueString()` para evitar conflictos de nombres  
 ✅ Archivos `.bicepparam` en lugar de JSON (mejor práctica actual)  
-✅ Etiquetas consistentes en recursos (con `deploymentDate` basado en `utcNow()` por default en parámetros)  
+✅ Módulo de VM separado (`modules/vm`) y SSH key como parámetro seguro  
 ✅ Comentarios informativos  
 ✅ Outputs para capturar IDs y nombres de recursos  
 ✅ Configuración de análisis (bicepconfig.json)
